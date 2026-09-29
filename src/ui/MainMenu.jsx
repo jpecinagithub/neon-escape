@@ -23,6 +23,7 @@ export function MainMenu() {
       <div className="menu-subtitle">SURVIVE THE NIGHT</div>
       <button className="btn btn-primary" onClick={play}>PLAY</button>
       <button className="btn" onClick={click(() => setPhase('garage'))}>GARAGE</button>
+      <button className="btn" onClick={click(() => setPhase('ranking'))}>RANKING</button>
       <button className="btn" onClick={click(() => setPhase('howto'))}>HOW TO PLAY</button>
       <button className="btn" onClick={click(() => setPhase('settings', 'menu'))}>SETTINGS</button>
       {best > 0 && <div className="best-tag">BEST: {best.toLocaleString()}</div>}

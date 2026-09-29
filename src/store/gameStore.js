@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { CARS } from '../game/constants';
 
 const SAVE_KEY = 'neon-escape-save-v1';
+const RANK_MAX = 10;
 
 function loadSave() {
   try {
@@ -11,6 +12,33 @@ function loadSave() {
   return {};
 }
 const saved = loadSave();
+
+function loadRankings() {
+  try {
+    const r = saved.rankings;
+    if (Array.isArray(r)) {
+      return r
+        .filter((e) => e && typeof e.score === 'number' && typeof e.name === 'string')
+        .sort((a, b) => b.score - a.score)
+        .slice(0, RANK_MAX);
+    }
+  } catch (e) { /* ignore */ }
+  return [];
+}
+// Migrate a pre-existing best score into the ranking once.
+function initialRankings() {
+  const r = loadRankings();
+  if (r.length === 0 && (saved.best || 0) > 0) {
+    return [{
+      name: saved.playerName || 'ACE',
+      score: Math.round(saved.best),
+      time: 0, kills: 0,
+      carId: saved.carId || 'vortex',
+      date: new Date().toISOString(),
+    }];
+  }
+  return r;
+}
 
 let notifId = 0;
 
@@ -23,13 +51,15 @@ export const useGame = create((set, get) => {
         best: s.best,
         unlocked: s.unlocked,
         carId: s.carId,
+        rankings: s.rankings,
+        playerName: s.playerName,
       }));
     } catch (e) { /* ignore */ }
   };
 
   return {
     // ---- phase ----
-    phase: 'menu', // menu | garage | howto | settings | playing | paused | gameover
+    phase: 'menu', // menu | garage | howto | settings | ranking | playing | paused | gameover
     settingsReturn: 'menu', // where SETTINGS returns to
     runId: 0, // increments on every fresh run; gameplay components reset on change
     setPhase: (phase, settingsReturn) =>
@@ -53,6 +83,37 @@ export const useGame = create((set, get) => {
     notifications: [], // {id, text, sub, kind}
     banner: null, // {text, sub}
     stats: null,
+
+    // ---- local leaderboard (front-end only, localStorage) ----
+    rankings: initialRankings(), // [{name, score, time, kills, carId, date}] desc, max RANK_MAX
+    playerName: saved.playerName || '',
+    rankMax: RANK_MAX,
+    qualifiesForRanking: (score) => {
+      const r = get().rankings;
+      return score > 0 && (r.length < RANK_MAX || score > r[r.length - 1].score);
+    },
+    saveRankingEntry: (name) => {
+      const s = get();
+      const st = s.stats;
+      if (!st || !s.qualifiesForRanking(st.score)) return -1;
+      const clean = (name || '').trim().slice(0, 12) || 'ACE';
+      const entry = {
+        name: clean,
+        score: st.score,
+        time: Math.round(st.time),
+        kills: st.kills,
+        carId: s.carId,
+        date: new Date().toISOString(),
+      };
+      const rankings = [...s.rankings, entry]
+        .sort((a, b) => b.score - a.score)
+        .slice(0, RANK_MAX);
+      const rank = rankings.indexOf(entry);
+      set({ rankings, playerName: clean });
+      save();
+      return rank;
+    },
+    clearRankings: () => { set({ rankings: [] }); save(); },
 
     // ---- garage ----
     carId: saved.carId || 'vortex',

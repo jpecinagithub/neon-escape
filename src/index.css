@@ -261,3 +261,22 @@ kbd {
 .howto p { font-size: 14px; color: #bfe0f5; margin: 4px 0; }
 
 .pause-title { font-size: 54px; font-weight: 900; font-style: italic; letter-spacing: 0.14em; color: #fff; text-shadow: 0 0 20px var(--neon-cyan); margin: 0 0 24px; }
+
+/* ---------- local ranking ---------- */
+.rk-table { width: min(92vw, 460px); margin: 8px auto 0; display: flex; flex-direction: column; gap: 6px; max-height: 46vh; overflow-y: auto; padding: 2px; }
+.rk-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(10, 6, 28, 0.75); border: 1px solid rgba(45, 226, 255, 0.18); border-radius: 10px; }
+.rk-row.hl { border-color: var(--neon-yellow); background: rgba(60, 45, 5, 0.55); box-shadow: 0 0 14px rgba(255, 214, 51, 0.35); }
+.rk-pos { width: 44px; flex: none; font-weight: 700; font-size: 15px; text-align: center; }
+.rk-name { flex: 1; font-weight: 700; letter-spacing: 0.08em; color: #eaf7ff; font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rk-score { flex: none; font-weight: 700; color: var(--neon-cyan); font-size: 15px; text-align: right; font-variant-numeric: tabular-nums; }
+.rk-sub { display: block; font-weight: 400; font-size: 10px; letter-spacing: 0.1em; color: #8fc3e8; opacity: 0.75; margin-top: 2px; }
+.rk-empty { padding: 26px 18px; text-align: center; color: #8fc3e8; letter-spacing: 0.14em; font-size: 13px; border: 1px dashed rgba(45, 226, 255, 0.3); border-radius: 12px; width: min(92vw, 460px); margin: 8px auto 0; }
+.rk-save { margin: 14px auto 4px; width: min(92vw, 460px); padding: 12px 14px; border: 1px solid rgba(255, 214, 51, 0.45); border-radius: 12px; background: rgba(30, 22, 4, 0.55); box-shadow: 0 0 18px rgba(255, 214, 51, 0.15); }
+.rk-save-title { color: var(--neon-yellow); letter-spacing: 0.18em; font-size: 13px; font-weight: 700; text-align: center; margin-bottom: 10px; text-shadow: 0 0 12px rgba(255, 214, 51, 0.6); }
+.rk-save-row { display: flex; gap: 10px; align-items: center; justify-content: center; }
+.rk-saved { margin: 14px auto 4px; width: min(94vw, 480px); }
+.rk-saved-title { color: var(--neon-yellow); letter-spacing: 0.18em; font-size: 15px; font-weight: 700; text-align: center; margin-bottom: 8px; text-shadow: 0 0 14px rgba(255, 214, 51, 0.7); }
+.name-input { flex: 1; min-width: 0; max-width: 220px; background: rgba(5, 2, 16, 0.85); border: 1px solid rgba(45, 226, 255, 0.4); border-radius: 8px; color: #eaf7ff; font-size: 16px; font-weight: 700; letter-spacing: 0.12em; padding: 10px 12px; outline: none; font-family: inherit; }
+.name-input:focus { border-color: var(--neon-cyan); box-shadow: 0 0 12px rgba(45, 226, 255, 0.4); }
+.name-input::placeholder { color: rgba(143, 195, 232, 0.45); }
+.btn-danger { border-color: rgba(255, 68, 68, 0.6) !important; color: #ff8080 !important; }

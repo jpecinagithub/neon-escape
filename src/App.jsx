@@ -16,6 +16,7 @@ import { MainMenu, MenuScene } from './ui/MainMenu';
 import { HUD } from './ui/HUD';
 import { PauseMenu } from './ui/PauseMenu';
 import { GameOver } from './ui/GameOver';
+import { Ranking } from './ui/Ranking';
 import { Garage } from './ui/Garage';
 import { Settings } from './ui/Settings';
 import { HowToPlay } from './ui/HowToPlay';
@@ -147,6 +148,7 @@ export default function App() {
       {phase === 'menu' && <MainMenu />}
       {phase === 'garage' && <Garage />}
       {phase === 'howto' && <HowToPlay />}
+      {phase === 'ranking' && <Ranking />}
       {phase === 'settings' && <Settings />}
       {phase === 'paused' && <PauseMenu />}
       {phase === 'gameover' && (
