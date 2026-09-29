@@ -173,18 +173,25 @@ export function PlayerCar() {
     const body = bodyRef.current;
     const pl = body ? body.linvel() : { x: 0, y: 0, z: 0 };
     let rel = 0;
+    // In @react-three/rapier 1.5 e.other.rigidBody is the RigidBody object
+    // itself (not a function) — calling it threw, rel stayed 0 and the
+    // player never took collision damage.
     let otherBody = null;
-    try {
-      otherBody = e.other.rigidBody ? e.other.rigidBody() : null;
-    } catch {
-      otherBody = null;
+    const orb = e.other && e.other.rigidBody;
+    if (typeof orb === 'function') {
+      try { otherBody = orb(); } catch { otherBody = null; }
+    } else if (orb) {
+      otherBody = orb;
     }
-    if (otherBody) {
-      const ol = otherBody.linvel();
-      const dx = pl.x - ol.x;
-      const dy = pl.y - ol.y;
-      const dz = pl.z - ol.z;
-      rel = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    if (otherBody && otherBody.linvel) {
+      let ol = null;
+      try { ol = otherBody.linvel(); } catch { ol = null; }
+      if (ol) {
+        const dx = pl.x - ol.x;
+        const dy = pl.y - ol.y;
+        const dz = pl.z - ol.z;
+        rel = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      }
     }
 
     const p = playerRef.position;
