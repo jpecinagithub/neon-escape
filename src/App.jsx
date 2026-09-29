@@ -14,7 +14,6 @@ import { Powerups } from './game/Powerups';
 import { Props } from './game/Props';
 import { MainMenu, MenuScene } from './ui/MainMenu';
 import { HUD } from './ui/HUD';
-import { PadStatus } from './ui/PadStatus';
 import { PauseMenu } from './ui/PauseMenu';
 import { GameOver } from './ui/GameOver';
 import { Garage } from './ui/Garage';
@@ -144,7 +143,6 @@ export default function App() {
   return (
     <>
       {inGame ? <GameScene /> : <MenuBackground />}
-      <PadStatus />
       {(phase === 'playing' || phase === 'paused') && <HUD />}
       {phase === 'menu' && <MainMenu />}
       {phase === 'garage' && <Garage />}
