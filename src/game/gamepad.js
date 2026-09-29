@@ -8,15 +8,15 @@ const DEADZONE = 0.15;
 let padIndex = null;
 let prevButtons = [];
 
-// Standard mapping (what browsers report for DualShock 4 / DualSense):
-//   axes[0]  left stick X          -> steering
-//   btn 7    RT (analog)           -> throttle
-//   btn 6    LT (analog)           -> brake / reverse
-//   btn 0    Cross                 -> handbrake (drift)
-//   btn 1    Circle                -> camera
-//   btn 3    Triangle              -> reset car
-//   btn 9    Options               -> pause
-//   dpad 14/15/12/13              -> digital steering / throttle / brake fallback
+// PlayStation-first layout: classic (X/Square) AND modern (RT/LT) schemes
+// work at the same time, so whatever the player expects just works.
+//   X (0) / RT (7) ....... accelerate (X digital, RT analog)
+//   Square (2) / LT (6) ... brake / reverse (Square digital, LT analog)
+//   Left stick / D-pad .... steer
+//   Circle (1) ............ handbrake (drift)
+//   Triangle (3) .......... reset car
+//   R1 (5) ................ camera
+//   Options (9) ........... pause
 
 function findPad() {
   const pads = typeof navigator !== 'undefined' && navigator.getGamepads ? navigator.getGamepads() : [];
@@ -47,13 +47,15 @@ export function pollPad() {
   if (btnDown(p, 15)) steer = 1;
   else if (btnDown(p, 14)) steer = -1;
   let throttle = btnVal(p, 7);
+  if (btnDown(p, 0)) throttle = 1; // X = gas (classic PlayStation layout)
   let brake = btnVal(p, 6);
+  if (btnDown(p, 2)) brake = 1; // Square = brake (classic PlayStation layout)
   // some drivers report triggers digital-only — accept pressed as full input
   if (btnDown(p, 7)) throttle = Math.max(throttle, 1);
   if (btnDown(p, 6)) brake = Math.max(brake, 1);
   if (btnDown(p, 12)) throttle = Math.max(throttle, 1);
   if (btnDown(p, 13)) brake = Math.max(brake, 1);
-  return { connected: true, steer, throttle, brake, handbrake: btnDown(p, 0) };
+  return { connected: true, steer, throttle, brake, handbrake: btnDown(p, 1) };
 }
 
 // Raw live Gamepad object for diagnostics / HUD readouts. Null when none.
@@ -71,7 +73,7 @@ export function pollPadButtons() {
   }
   const edge = (i) => btnDown(p, i) && !prevButtons[i];
   if (edge(3)) out.push('reset'); // Triangle
-  if (edge(1)) out.push('camera'); // Circle
+  if (edge(5)) out.push('camera'); // R1
   if (edge(9)) out.push('pause'); // Options
   prevButtons = p.buttons.map((b) => b.pressed);
   return out;

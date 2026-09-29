@@ -14,11 +14,12 @@ const CONTROLS = [
 ];
 
 const PAD = [
-  ['RT / LT', 'Accelerate / brake · reverse'],
+  ['X / RT', 'Accelerate'],
+  ['Square / LT', 'Brake · reverse'],
   ['Left stick', 'Steer'],
-  ['Cross', 'Handbrake — drift!'],
+  ['Circle', 'Handbrake — drift!'],
   ['Triangle', 'Reset car'],
-  ['Circle', 'Camera view'],
+  ['R1', 'Camera view'],
   ['Options', 'Pause'],
 ];
 
