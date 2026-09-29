@@ -14,6 +14,22 @@ import {
 import { NEON_SIGNS } from './constants.js';
 import { useGame } from '../store/gameStore.js';
 
+/** Streetlight [x, z] positions along every road — shared by visuals and physics. */
+export function getLampPositions() {
+  const lamps = [];
+  for (const r of ROADS) {
+    const vertical = r.d > r.w;
+    const len = vertical ? r.d : r.w;
+    const off = ROAD_W / 2 + 2;
+    let i = 0;
+    for (let s = -len / 2 + 22; s < len / 2; s += 44, i++) {
+      const side = i % 2 === 0 ? off : -off;
+      lamps.push(vertical ? [r.x + side, s] : [s, r.z + side]);
+    }
+  }
+  return lamps;
+}
+
 /* ---------------- helpers ---------------- */
 
 const V3 = new THREE.Vector3();
@@ -93,17 +109,7 @@ export function CityVisual() {
     }
 
     /* ---- streetlights ---- */
-    const lamps = []; // {x, z}
-    for (const r of ROADS) {
-      const vertical = r.d > r.w;
-      const len = vertical ? r.d : r.w;
-      const off = ROAD_W / 2 + 2;
-      let i = 0;
-      for (let s = -len / 2 + 22; s < len / 2; s += 44, i++) {
-        const side = i % 2 === 0 ? off : -off;
-        lamps.push(vertical ? [r.x + side, s] : [s, r.z + side]);
-      }
-    }
+    const lamps = getLampPositions();
 
     /* ---- billboard placements ---- */
     const signs = [];
@@ -385,6 +391,10 @@ export function CityColliders() {
         ))}
         {/* plaza obelisk */}
         <CuboidCollider args={[1.5, 7, 1.5]} position={[0, 7, 0]} />
+        {/* streetlight poles — solid so cars can't ghost through them */}
+        {getLampPositions().map(([x, z], i) => (
+          <CuboidCollider key={`lamp${i}`} args={[0.25, 3.5, 0.25]} position={[x, 3.5, z]} />
+        ))}
       </RigidBody>
 
       {/* ramps — tilted rigid bodies so cars can drive up them */}
