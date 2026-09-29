@@ -115,16 +115,43 @@ function Minimap() {
         ctx.fill();
       }
 
-      // player triangle, always pointing up
+      // player marker: pulsing ring + glowing triangle with white outline,
+      // pointing along the player's heading (which is screen-up after rotation)
       const x = wx(playerRef.position.x);
       const y = wz(playerRef.position.z);
-      ctx.fillStyle = '#00e5ff';
+      const hx = Math.sin(playerRef.heading);
+      const hz = Math.cos(playerRef.heading);
+      const px = -hz, pz = hx; // perpendicular
+      const L = 9, W = 6.5; // triangle length / half-width
+      // expanding pulse ring draws the eye
+      const pulse = (now % 1200) / 1200;
+      ctx.strokeStyle = `rgba(0,229,255,${(0.65 * (1 - pulse)).toFixed(3)})`;
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(x, y - 5.5);
-      ctx.lineTo(x - 4, y + 4.5);
-      ctx.lineTo(x + 4, y + 4.5);
-      ctx.closePath();
+      ctx.arc(x, y, 7 + pulse * 11, 0, Math.PI * 2);
+      ctx.stroke();
+      // triangle
+      const tipX = x + hx * L, tipY = y + hz * L;
+      const b1X = x - hx * L * 0.7 + px * W, b1Y = y - hz * L * 0.7 + pz * W;
+      const b2X = x - hx * L * 0.7 - px * W, b2Y = y - hz * L * 0.7 - pz * W;
+      const traceTri = () => {
+        ctx.beginPath();
+        ctx.moveTo(tipX, tipY);
+        ctx.lineTo(b1X, b1Y);
+        ctx.lineTo(b2X, b2Y);
+        ctx.closePath();
+      };
+      ctx.save();
+      ctx.shadowColor = '#00e5ff';
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = '#00e5ff';
+      traceTri();
       ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.8;
+      traceTri();
+      ctx.stroke();
 
       ctx.restore();
     };
