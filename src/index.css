@@ -211,7 +211,7 @@ canvas { display: block; }
 .stat-row { display: flex; align-items: center; gap: 8px; margin: 3px 0; font-size: 11px; }
 .stat-name { width: 86px; letter-spacing: 0.12em; color: #8fc3e8; font-size: 10px; }
 .stat-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
-.stat-fill { height: 100%; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink)); box-shadow: 0 0 8px var(--neon-cyan); }
+.stat-fill { display: block; height: 100%; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink)); box-shadow: 0 0 8px var(--neon-cyan); }
 
 /* ---------- settings ---------- */
 .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 12px 0; min-width: min(78vw, 430px); }
