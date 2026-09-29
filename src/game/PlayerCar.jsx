@@ -329,6 +329,7 @@ export function PlayerCar() {
 
     playerRef.speedMs = Math.abs(speed);
     playerRef.speedKmh = speedKmh;
+    playerRef.heading = S.heading; // driven by minimap + camera rig
     playerRef.drifting = drifting;
     playerRef.driftAngle = driftAngle;
     playerRef.airborne = airborne;
