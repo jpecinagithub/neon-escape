@@ -277,26 +277,36 @@ function Enemy({ id, type, x, z, bodyMap, onDestroyed, onGone }) {
       s.hitCooldown = t + 0.3;
 
       const lv = rb.linvel();
-      const otherRb = e.other && e.other.rigidBody;
+      let otherRb = e.other && e.other.rigidBody;
+      if (typeof otherRb === 'function') {
+        try { otherRb = otherRb(); } catch { otherRb = null; }
+      }
       let ox = 0, oy = 0, oz = 0;
-      if (otherRb) {
-        const olv = otherRb.linvel();
-        ox = olv.x; oy = olv.y; oz = olv.z;
+      if (otherRb && otherRb.linvel) {
+        try {
+          const olv = otherRb.linvel();
+          ox = olv.x; oy = olv.y; oz = olv.z;
+        } catch { /* ignore */ }
       }
       const rel = Math.hypot(lv.x - ox, lv.y - oy, lv.z - oz);
       if (rel < 3) return; // ignore gentle taps
 
       const isPlayer = !!otherRb && otherRb === playerRef.body;
-      const dmg = rel * (isPlayer ? 1.4 : 1.8);
+      const isEnemy = !!otherRb && bodyMap.current.has(otherRb);
       const tp = rb.translation();
       effectsApi.burst(tp.x, tp.y + 0.6, tp.z, {
         count: Math.round(rel * 1.5),
         color: 0xffaa33,
       });
       if (audio && audio.impact) audio.impact(clamp(rel / 22, 0, 1));
+      // Enemies only take damage from the player (ramming) and from other
+      // enemies (pile-ups) — never from static scenery, or they suicide on
+      // every wall and spam ENEMY CRASH banners.
+      if (!isPlayer && !isEnemy) return;
+      const dmg = rel * (isPlayer ? 1.4 : 1.8);
       takeDamage(dmg); // guards double-destroy via entry.alive
     },
-    [takeDamage]
+    [takeDamage, bodyMap]
   );
 
   useFrame((_, delta) => {
