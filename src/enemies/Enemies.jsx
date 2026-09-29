@@ -18,6 +18,7 @@ import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import * as THREE from 'three';
 import { ENEMY_DEFS } from '../game/constants';
 import { randomRoadPoint, pathBlocked, clampToWorld } from '../game/cityData';
+import { findRoadPath } from '../game/roadGraph';
 import { playerRef, enemiesRef, timeState, now } from '../game/shared';
 import { useGame } from '../store/gameStore';
 import { enemiesApi } from './enemiesApi';
@@ -204,6 +205,8 @@ function Enemy({ id, type, x, z, bodyMap, onDestroyed, onGone }) {
       smokeTimer: 0,
       gone: false,
       lastHitAt: 0,
+      path: [], // road-graph waypoints when far from the player
+      repathAt: 0,
     };
   }
 
@@ -367,11 +370,29 @@ function Enemy({ id, type, x, z, bodyMap, onDestroyed, onGone }) {
       return;
     }
 
-    // --- pursuit target by behavior ---
+    // --- pursuit target: follow the street grid when far, hunt directly when near ---
     const p = playerRef.position;
     const v = playerRef.velocity;
+    const dPlayer = Math.hypot(p.x - tp.x, p.z - tp.z);
     let tx, tz;
-    if (def.behavior === 'chase') {
+    if (dPlayer > 60) {
+      // ROAD MODE: drive the avenues/streets like traffic, repathing as the player moves
+      if (t > s.repathAt || s.path.length === 0) {
+        s.path = findRoadPath(tp.x, tp.z, p.x, p.z);
+        s.repathAt = t + 2;
+      }
+      while (s.path.length > 0) {
+        const wp = s.path[0];
+        if (Math.hypot(wp.x - tp.x, wp.z - tp.z) < 14) s.path.shift();
+        else break;
+      }
+      if (s.path.length > 0) {
+        tx = s.path[0].x;
+        tz = s.path[0].z;
+      } else {
+        tx = p.x; tz = p.z; // same block (or no route): beeline
+      }
+    } else if (def.behavior === 'chase') {
       tx = p.x + v.x * 0.35;
       tz = p.z + v.z * 0.35;
     } else if (def.behavior === 'side') {
