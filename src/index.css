@@ -261,3 +261,13 @@ kbd {
 .howto p { font-size: 14px; color: #bfe0f5; margin: 4px 0; }
 
 .pause-title { font-size: 54px; font-weight: 900; font-style: italic; letter-spacing: 0.14em; color: #fff; text-shadow: 0 0 20px var(--neon-cyan); margin: 0 0 24px; }
+
+/* ---- gamepad live status + diagnostics ---- */
+.padstatus { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 80; background: rgba(8,4,24,.88); border: 1px solid rgba(45,226,255,.25); border-radius: 10px; padding: 6px 12px; font-size: 12px; color: #9beaff; cursor: pointer; user-select: none; font-family: ui-monospace, monospace; max-width: 92vw; }
+.padstatus-row { display: flex; gap: 8px; align-items: center; white-space: nowrap; }
+.padstatus-caret { opacity: .6; }
+.padstatus-detail { margin-top: 8px; display: grid; gap: 5px; font-size: 11px; }
+.padstatus-id { opacity: .55; word-break: break-all; }
+.padstatus-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.padstatus-btns span { opacity: .45; }
+.padbtn-on { opacity: 1 !important; color: #7dff9a; font-weight: bold; }

@@ -48,9 +48,17 @@ export function pollPad() {
   else if (btnDown(p, 14)) steer = -1;
   let throttle = btnVal(p, 7);
   let brake = btnVal(p, 6);
+  // some drivers report triggers digital-only — accept pressed as full input
+  if (btnDown(p, 7)) throttle = Math.max(throttle, 1);
+  if (btnDown(p, 6)) brake = Math.max(brake, 1);
   if (btnDown(p, 12)) throttle = Math.max(throttle, 1);
   if (btnDown(p, 13)) brake = Math.max(brake, 1);
   return { connected: true, steer, throttle, brake, handbrake: btnDown(p, 0) };
+}
+
+// Raw live Gamepad object for diagnostics / HUD readouts. Null when none.
+export function getRawPad() {
+  return findPad();
 }
 
 // Edge-triggered one-shot actions. Call once per frame; returns e.g. ['reset', 'pause'].
