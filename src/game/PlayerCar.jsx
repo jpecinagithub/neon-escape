@@ -4,7 +4,7 @@ import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import * as THREE from 'three';
 import { CarModel } from '../vehicles/CarModel';
 import { useGame } from '../store/gameStore';
-import { playerRef, enemiesRef, timeState, triggerSlowMo, cameraState, bus, now } from './shared';
+import { playerRef, enemiesRef, timeState, triggerSlowMo, cameraState, bus, now, pursuitState } from './shared';
 import { CARS } from './constants';
 import { PLAYER_SPAWN } from './cityData';
 import { effectsApi } from './effectsApi';
@@ -47,6 +47,7 @@ export function PlayerCar() {
     airTime: 0,
     lastSafe: { x: PLAYER_SPAWN.x, z: PLAYER_SPAWN.z, heading: PLAYER_SPAWN.heading },
     near: new Map(), // enemyId -> last near-miss time
+    evadeTimer: 0, // breakaway meter: time with every enemy beyond EVADE_DIST
     nitro: false,
     bodySet: false,
   });
@@ -138,6 +139,10 @@ export function PlayerCar() {
         S.airTime = 0;
         S.nitro = false;
         S.near.clear();
+        S.evadeTimer = 0;
+        playerRef.evade.active = false;
+        playerRef.evade.progress = 0;
+        pursuitState.breatherUntil = 0;
         S.lastSafe = { x: PLAYER_SPAWN.x, z: PLAYER_SPAWN.z, heading: PLAYER_SPAWN.heading };
         setNitroOn(false);
         audio.engineStart();
@@ -145,6 +150,8 @@ export function PlayerCar() {
       if (s.phase === 'gameover' && !wreckHandled.current) {
         wreckHandled.current = true;
         playerRef.wrecked = true;
+        playerRef.evade.active = false;
+        playerRef.evade.progress = 0;
         triggerSlowMo(1.1);
         const p = playerRef.position;
         effectsApi.explosion(p.x, p.y, p.z, 1.4);
@@ -413,6 +420,39 @@ export function PlayerCar() {
           d < 2.9 ? ['INSANE!', 600] : d < 3.6 ? ['VERY CLOSE!', 400] : ['NEAR MISS', 250];
         store.addScore(pts, label);
       }
+    }
+
+    // ---- pursuit evade: stay beyond EVADE_DIST of every hostile for EVADE_TIME
+    // and they lose your trail (bonus + spawn breather). This is how you "win"
+    // the chase: escaping is possible, not just surviving it.
+    let minEnemyD = Infinity;
+    let anyHostile = false;
+    for (const e of enemiesRef.list) {
+      if (!e.alive || e.giveUp) continue;
+      anyHostile = true;
+      const dx = e.position.x - pos.x;
+      const dz = e.position.z - pos.z;
+      const d = Math.sqrt(dx * dx + dz * dz);
+      if (d < minEnemyD) minEnemyD = d;
+    }
+    const EVADE_DIST = 95;
+    const EVADE_TIME = 3.5;
+    if (anyHostile && minEnemyD > EVADE_DIST) S.evadeTimer += dtRaw;
+    else S.evadeTimer = 0;
+    const evadeP = clamp(S.evadeTimer / EVADE_TIME, 0, 1);
+    playerRef.evade.active = S.evadeTimer > 0.2 && evadeP < 1;
+    playerRef.evade.progress = evadeP;
+    if (S.evadeTimer >= EVADE_TIME) {
+      S.evadeTimer = 0;
+      playerRef.evade.active = false;
+      playerRef.evade.progress = 0;
+      let n = 0;
+      for (const e of enemiesRef.list) {
+        if (e.alive && !e.giveUp) { e.giveUp = true; n++; }
+      }
+      pursuitState.breatherUntil = now() + 12;
+      store.evadePursuit(n);
+      audio.pickup();
     }
 
     // ---- jumps ----

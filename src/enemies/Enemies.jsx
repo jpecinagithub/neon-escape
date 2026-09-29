@@ -19,7 +19,7 @@ import * as THREE from 'three';
 import { ENEMY_DEFS } from '../game/constants';
 import { randomRoadPoint, pathBlocked, clampToWorld } from '../game/cityData';
 import { findRoadPath } from '../game/roadGraph';
-import { playerRef, enemiesRef, timeState, now } from '../game/shared';
+import { playerRef, enemiesRef, timeState, now, pursuitState } from '../game/shared';
 import { useGame } from '../store/gameStore';
 import { enemiesApi } from './enemiesApi';
 import { effectsApi } from '../game/effectsApi';
@@ -151,6 +151,13 @@ export function Enemies() {
     if (gs.phase !== 'playing') return;
     const m = mgr.current;
     const t = gs.survivalTime;
+
+    // breather after a successful evade: no spawns, no events
+    if (now() < pursuitState.breatherUntil) {
+      m.spawnTimer = 2.5;
+      m.eventTimer = Math.max(m.eventTimer, 8);
+      return;
+    }
 
     m.spawnTimer -= delta;
     if (m.spawnTimer <= 0) {
@@ -370,6 +377,25 @@ function Enemy({ id, type, x, z, bodyMap, onDestroyed, onGone }) {
       return;
     }
 
+    // --- gave up (player broke the pursuit): pull over and vanish ---
+    if (entry.giveUp && !s.giveUp) {
+      s.giveUp = true;
+      s.path = [];
+    }
+    if (s.giveUp) {
+      s.speed = Math.max(0, s.speed - 25 * dt);
+      const lv = rb.linvel();
+      rb.setLinvel({ x: Math.sin(s.heading) * s.speed, y: lv.y, z: Math.cos(s.heading) * s.speed }, true);
+      syncEntry();
+      if (s.speed < 2 && !s.gone) {
+        const gp = rb.translation();
+        effectsApi.smoke(gp.x, gp.y + 0.8, gp.z, { big: false, dark: true });
+        s.gone = true;
+        onGone(id);
+      }
+      return;
+    }
+
     // --- pursuit target: follow the street grid when far, hunt directly when near ---
     const p = playerRef.position;
     const v = playerRef.velocity;
@@ -443,9 +469,12 @@ function Enemy({ id, type, x, z, bodyMap, onDestroyed, onGone }) {
     tz = c.z;
 
     // --- steering ---
+    // Committed ram: under 28u the enemy locks its line — a sharp last-second
+    // jink genuinely dodges it. This is what makes crashes avoidable.
     const desiredYaw = Math.atan2(tx - tp.x, tz - tp.z);
     const yawDiff = wrapAngle(desiredYaw - s.heading);
-    const turnStep = clamp(yawDiff, -def.turn * dt, def.turn * dt);
+    const commit = dPlayer < 28 ? 0.45 : 1;
+    const turnStep = clamp(yawDiff, -def.turn * dt, def.turn * dt) * commit;
     s.heading = wrapAngle(s.heading + turnStep);
 
     // --- speed ---

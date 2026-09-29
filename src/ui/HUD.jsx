@@ -34,6 +34,33 @@ function Fps() {
   return <div className="fps">{fps} FPS</div>;
 }
 
+/** Breakaway meter: shows while the player is outrunning every hostile. */
+function EvadeMeter() {
+  const [p, setP] = useState(-1);
+  useEffect(() => {
+    let raf = 0;
+    let last = -1;
+    const loop = () => {
+      const e = playerRef.evade;
+      const v = e.active ? e.progress : -1;
+      if (v !== last) {
+        last = v;
+        setP(v);
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  if (p < 0) return null;
+  return (
+    <div className="evade-meter">
+      <div className="evade-label">BREAKING AWAY…</div>
+      <div className="evade-bar"><div className="evade-fill" style={{ width: `${Math.round(p * 100)}%` }} /></div>
+    </div>
+  );
+}
+
 /** Red vignette flash whenever hull health drops. */
 function DmgFlash() {
   const health = useGame((s) => s.health);
@@ -191,6 +218,7 @@ export function HUD() {
         <div className="hud-time">{fmtTime(survivalTime)}</div>
       </div>
       {settings.showFps && <Fps />}
+      <EvadeMeter />
 
       {/* bottom-left: hull + power-up icons */}
       <div className="hud-bl">

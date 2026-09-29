@@ -53,6 +53,8 @@ export function HowToPlay() {
         </p>
         <h3>SURVIVE</h3>
         <p>Evade the pursuers hunting you through the neon city.</p>
+        <p><b>Break away:</b> outrun every hostile (95m+) for a few seconds to trigger <b>PURSUIT EVADED</b> — big bonus and a breather. Escaping is possible. Use it.</p>
+        <p><b>Dodge:</b> close-range rams are committed — a sharp last-second jink or drift will make them miss. Near misses pay up to 600 pts.</p>
         <p>Drift and near-miss traffic to build your combo multiplier.</p>
         <p>Wreck enemies head-on or with the EMP for +1000 points.</p>
         <p>Grab power-ups: N (nitro), shield, EMP, repair, and 2x score.</p>

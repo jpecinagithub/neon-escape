@@ -203,6 +203,14 @@ export const useGame = create((set, get) => {
     },
     addKill: () => set((s) => ({ enemiesDestroyed: s.enemiesDestroyed + 1 })),
 
+    /** Player broke away from the pursuit: bonus + breather handled by callers. */
+    evadePursuit: (count) => {
+      const s = get();
+      if (s.phase !== 'playing') return;
+      s.addScore(1500 + 250 * count, 'PURSUIT EVADED');
+      s.setBanner('PURSUIT EVADED', `${count} hostile${count === 1 ? '' : 's'} lost your trail — breathe`, 3.5);
+    },
+
     damage: (amount) => {
       const s = get();
       if (s.phase !== 'playing') return;
