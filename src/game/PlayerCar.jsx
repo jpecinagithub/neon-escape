@@ -4,11 +4,11 @@ import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import * as THREE from 'three';
 import { CarModel } from '../vehicles/CarModel';
 import { useGame } from '../store/gameStore';
-import { playerRef, enemiesRef, timeState, triggerSlowMo, cameraState, bus, now, pursuitState } from './shared';
+import { playerRef, pedsRef, timeState, triggerSlowMo, cameraState, bus, now } from './shared';
 import { CARS } from './constants';
 import { PLAYER_SPAWN } from './cityData';
 import { effectsApi } from './effectsApi';
-import { enemiesApi } from '../enemies/enemiesApi';
+import { PED_DEFS, pedPoints } from '../peds/Pedestrians';
 import { audio } from '../audio/audioEngine';
 import { pollPad, pollPadButtons, rumble } from './gamepad';
 
@@ -46,8 +46,7 @@ export function PlayerCar() {
     driftMax: 0,
     airTime: 0,
     lastSafe: { x: PLAYER_SPAWN.x, z: PLAYER_SPAWN.z, heading: PLAYER_SPAWN.heading },
-    near: new Map(), // enemyId -> last near-miss time
-    evadeTimer: 0, // breakaway meter: time with every enemy beyond EVADE_DIST
+    near: new Map(), // pedId -> last near-miss time
     nitro: false,
     bodySet: false,
   });
@@ -139,10 +138,6 @@ export function PlayerCar() {
         S.airTime = 0;
         S.nitro = false;
         S.near.clear();
-        S.evadeTimer = 0;
-        playerRef.evade.active = false;
-        playerRef.evade.progress = 0;
-        pursuitState.breatherUntil = 0;
         S.lastSafe = { x: PLAYER_SPAWN.x, z: PLAYER_SPAWN.z, heading: PLAYER_SPAWN.heading };
         setNitroOn(false);
         audio.engineStart();
@@ -150,8 +145,6 @@ export function PlayerCar() {
       if (s.phase === 'gameover' && !wreckHandled.current) {
         wreckHandled.current = true;
         playerRef.wrecked = true;
-        playerRef.evade.active = false;
-        playerRef.evade.progress = 0;
         triggerSlowMo(1.1);
         const p = playerRef.position;
         effectsApi.explosion(p.x, p.y, p.z, 1.4);
@@ -215,10 +208,6 @@ export function PlayerCar() {
     store.damage(dmg);
     bus.emit('shake', { power: clamp(rel / 22, 0.2, 1) });
     if (rel > 17) triggerSlowMo(0.45);
-    if (otherBody && enemiesApi.damageByBody(otherBody, rel * 2.2)) {
-      store.addKill();
-      store.addScore(1000, 'ENEMY CRASH');
-    }
   };
 
   // ---- per-frame simulation ----
@@ -401,58 +390,57 @@ export function PlayerCar() {
       }
     }
 
-    // ---- near miss ----
-    const pvx = S.velDir.x * speed;
-    const pvz = S.velDir.z * speed;
-    if (Math.abs(speed) > 15) {
-      for (const e of enemiesRef.list) {
-        if (!e.alive) continue;
-        const dx = e.position.x - pos.x;
-        const dz = e.position.z - pos.z;
-        const d = Math.sqrt(dx * dx + dz * dz);
-        if (d >= 4.3) continue;
-        const relS = Math.hypot(pvx - e.velocity.x, pvz - e.velocity.z);
-        if (relS <= 12) continue;
-        const last = S.near.get(e.id);
-        if (last !== undefined && t - last < 3) continue;
-        S.near.set(e.id, t);
-        const [label, pts] =
-          d < 2.9 ? ['INSANE!', 600] : d < 3.6 ? ['VERY CLOSE!', 400] : ['NEAR MISS', 250];
-        store.addScore(pts, label);
+    // ---- pedestrians: run over the bad (red) for points, spare the good (blue) ----
+    // Hitting a bad ped is pure reward (no self-damage); hitting a good one
+    // costs hull and kills your combo. Clean risk/reward, no perverse incentive.
+    const spdKmh = Math.abs(speed) * 3.6;
+    if (spdKmh > 11 && !playerRef.wrecked) {
+      for (const pd of pedsRef.list) {
+        if (!pd.alive) continue;
+        const dx = pd.position.x - pos.x;
+        const dz = pd.position.z - pos.z;
+        if (dx * dx + dz * dz > 2.4 * 2.4) continue;
+        pd.alive = false; // the director sweeps it from the roster
+        if (pd.alignment === 'bad') {
+          const pts = pedPoints(pd.type);
+          store.addKill();
+          store.addScore(pts, `¡${PED_DEFS[pd.type].label}!`);
+          effectsApi.burst(pd.position.x, 1, pd.position.z, {
+            count: 26, color: 0xff4455, speed: 9, up: 7,
+          });
+          audio.impact(0.5);
+          rumble(0.5, 120);
+        } else {
+          store.damage(12);
+          store.resetCombo();
+          store.notify('¡ERA BUENO!', 'azul = no tocar · -12 casco', 'bad');
+          effectsApi.burst(pd.position.x, 1, pd.position.z, {
+            count: 22, color: 0x66aaff, speed: 8, up: 6,
+          });
+          audio.impact(0.7);
+          bus.emit('shake', { power: 0.6 });
+          rumble(0.7, 200);
+        }
       }
     }
 
-    // ---- pursuit evade: stay beyond EVADE_DIST of every hostile for EVADE_TIME
-    // and they lose your trail (bonus + spawn breather). This is how you "win"
-    // the chase: escaping is possible, not just surviving it.
-    let minEnemyD = Infinity;
-    let anyHostile = false;
-    for (const e of enemiesRef.list) {
-      if (!e.alive || e.giveUp) continue;
-      anyHostile = true;
-      const dx = e.position.x - pos.x;
-      const dz = e.position.z - pos.z;
-      const d = Math.sqrt(dx * dx + dz * dz);
-      if (d < minEnemyD) minEnemyD = d;
-    }
-    const EVADE_DIST = 95;
-    const EVADE_TIME = 3.5;
-    if (anyHostile && minEnemyD > EVADE_DIST) S.evadeTimer += dtRaw;
-    else S.evadeTimer = 0;
-    const evadeP = clamp(S.evadeTimer / EVADE_TIME, 0, 1);
-    playerRef.evade.active = S.evadeTimer > 0.2 && evadeP < 1;
-    playerRef.evade.progress = evadeP;
-    if (S.evadeTimer >= EVADE_TIME) {
-      S.evadeTimer = 0;
-      playerRef.evade.active = false;
-      playerRef.evade.progress = 0;
-      let n = 0;
-      for (const e of enemiesRef.list) {
-        if (e.alive && !e.giveUp) { e.giveUp = true; n++; }
+    // ---- near miss: threading past a GOOD ped at speed is skill — reward it ----
+    const pvx = S.velDir.x * speed;
+    const pvz = S.velDir.z * speed;
+    if (Math.abs(speed) > 15) {
+      for (const pd of pedsRef.list) {
+        if (!pd.alive || pd.alignment !== 'good') continue;
+        const dx = pd.position.x - pos.x;
+        const dz = pd.position.z - pos.z;
+        const d = Math.sqrt(dx * dx + dz * dz);
+        if (d >= 4.3) continue;
+        const last = S.near.get(pd.id);
+        if (last !== undefined && t - last < 3) continue;
+        S.near.set(pd.id, t);
+        const [label, pts] =
+          d < 2.9 ? ['¡POR POCO!', 600] : d < 3.6 ? ['¡UY!', 400] : ['ROZANDO', 250];
+        store.addScore(pts, label);
       }
-      pursuitState.breatherUntil = now() + 12;
-      store.evadePursuit(n);
-      audio.pickup();
     }
 
     // ---- jumps ----

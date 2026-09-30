@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useGame } from '../store/gameStore.js';
-import { playerRef, enemiesRef, powerupsRef } from '../game/shared.js';
+import { playerRef, pedsRef, powerupsRef } from '../game/shared.js';
 import { TutorialCoach } from './TutorialCoach.jsx';
 import { ROADS, WORLD_HALF } from '../game/cityData.js';
 import { POWERUP_DEFS } from '../game/constants.js';
@@ -36,32 +36,6 @@ function Fps() {
 }
 
 /** Breakaway meter: shows while the player is outrunning every hostile. */
-function EvadeMeter() {
-  const [p, setP] = useState(-1);
-  useEffect(() => {
-    let raf = 0;
-    let last = -1;
-    const loop = () => {
-      const e = playerRef.evade;
-      const v = e.active ? e.progress : -1;
-      if (v !== last) {
-        last = v;
-        setP(v);
-      }
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  }, []);
-  if (p < 0) return null;
-  return (
-    <div className="evade-meter">
-      <div className="evade-label">BREAKING AWAY…</div>
-      <div className="evade-bar"><div className="evade-fill" style={{ width: `${Math.round(p * 100)}%` }} /></div>
-    </div>
-  );
-}
-
 /** Red vignette flash whenever hull health drops. */
 function DmgFlash() {
   const health = useGame((s) => s.health);
@@ -134,12 +108,12 @@ function Minimap() {
         ctx.fill();
       }
 
-      // enemies (red dots)
-      ctx.fillStyle = '#ff2244';
-      for (const e of enemiesRef.list) {
-        if (!e.alive) continue;
+      // pedestrians: blue = good (spare), red = bad (run over)
+      for (const pd of pedsRef.list) {
+        if (!pd.alive) continue;
+        ctx.fillStyle = pd.alignment === 'bad' ? '#ff2244' : '#3fa9ff';
         ctx.beginPath();
-        ctx.arc(wx(e.position.x), wz(e.position.z), 2.6, 0, Math.PI * 2);
+        ctx.arc(wx(pd.position.x), wz(pd.position.z), 2.6, 0, Math.PI * 2);
         ctx.fill();
       }
 
@@ -219,7 +193,6 @@ export function HUD() {
         <div className="hud-time">{fmtTime(survivalTime)}</div>
       </div>
       {settings.showFps && <Fps />}
-      <EvadeMeter />
       <TutorialCoach />
 
       {/* bottom-left: hull + power-up icons */}

@@ -8,7 +8,7 @@ import { audio } from './audio/audioEngine';
 import { PlayerCar } from './game/PlayerCar';
 import { CameraRig } from './game/CameraRig';
 import { CityVisual, CityColliders } from './game/City';
-import { Enemies } from './enemies/Enemies';
+import { Pedestrians } from './peds/Pedestrians';
 import { Effects } from './game/Effects';
 import { Powerups } from './game/Powerups';
 import { Props } from './game/Props';
@@ -69,7 +69,7 @@ function GameScene() {
       <Physics timeStep={1 / 60} gravity={[0, -24, 0]} paused={phase === 'paused'}>
         <CityColliders />
         <PlayerCar />
-        <Enemies />
+        <Pedestrians />
         <Powerups />
         <Props />
       </Physics>

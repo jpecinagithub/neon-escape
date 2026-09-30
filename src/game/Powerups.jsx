@@ -6,7 +6,7 @@ import { POWERUP_DEFS } from './constants';
 import { playerRef, powerupsRef, now } from './shared';
 import { useGame } from '../store/gameStore';
 import { effectsApi } from './effectsApi';
-import { enemiesApi } from '../enemies/enemiesApi';
+import { pedsApi } from '../peds/pedsApi';
 import { audio } from '../audio/audioEngine';
 
 const KINDS = ['repair', 'nitro', 'shield', 'emp', 'score'];
@@ -52,7 +52,7 @@ export function Powerups() {
 
     store.collectPowerup(item.kind);
     if (item.kind === 'emp') {
-      enemiesApi.disableNearby(item.x, item.z, 50, 6);
+      pedsApi.freezeNearby(item.x, item.z, 50, 6);
     }
     audio.pickup();
     effectsApi.burst(item.x, 1.5, item.z, {

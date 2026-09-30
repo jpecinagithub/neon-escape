@@ -3,7 +3,7 @@ import { useGame } from '../store/gameStore.js';
 import { playerRef } from '../game/shared.js';
 import { audio } from '../audio/audioEngine.js';
 
-const NEAR_MISS_RE = /NEAR MISS|VERY CLOSE|INSANE/;
+const GOOD_NEAR_RE = /¡POR POCO!|¡UY!|ROZANDO/;
 
 const STEPS = [
   {
@@ -21,25 +21,25 @@ const STEPS = [
     timeout: 25,
   },
   {
-    title: 'DERRAPA',
-    text: 'Mantén ESPACIO / ○ (círculo) mientras giras para derrapar. Derrapar carga tu combo de puntos.',
-    hint: (c) => `${c.drift.toFixed(1)} / 0.8 s derrapando`,
-    done: (c) => c.drift >= 0.8,
-    timeout: 35,
+    title: 'ATROPELLA ROJOS',
+    text: 'Los de ROJO son malos (ladrones, punkis): ¡atropéllalos! Cada uno da puntos y no te hacen daño.',
+    hint: (c) => `${c.runOver} / 1 atropello`,
+    done: (c) => c.runOver >= 1,
+    timeout: 50,
   },
   {
-    title: 'POTENCIADORES',
-    text: 'Recoge un potenciador: síguelos en el minimapa (iconos de colores). El nitro da turbo y el EMP fríe a los que te persiguen.',
-    hint: () => 'busca un icono de color en el minimapa',
-    done: (c) => c.pickups > 0,
+    title: 'RESPETA AZULES',
+    text: 'Los de AZUL son buenos (niños, abuelas…): no los toques o pierdes casco. Esquivarlos de cerca da puntos.',
+    hint: () => 'roza a un azul sin tocarlo',
+    done: (c) => c.goodNearMiss,
     timeout: 45,
   },
   {
-    title: 'TE PERSIGUEN',
-    text: 'Los coches rojos te dan caza. Un quiebro brusco a último momento esquiva sus embestidas… y si te alejas 95 m de todos, rompes la persecución.',
-    hint: () => 'esquívalos de cerca o aléjate mucho',
-    done: (c) => c.evaded || c.nearMiss,
-    timeout: 45,
+    title: 'PATINADORES',
+    text: 'Los patinadores son rapidísimos: si van de rojo, ¡a por ellos! (valen más); si van de azul, ni los roces.',
+    hint: () => 'mira el color de su ropa',
+    done: () => false,
+    timeout: 25,
   },
 ];
 
@@ -55,10 +55,10 @@ export function TutorialCoach() {
   const [, setTick] = useState(0);
 
   const ctx = useRef({
-    speed: 0, turned: 0, drift: 0,
-    pickups: 0, evaded: false, nearMiss: false,
+    speed: 0, turned: 0,
+    runOver: 0, goodNearMiss: false,
     elapsed: 0, lastT: 0, lastHeading: 0,
-    stepStartPickups: 0, stepStartEvade: 0,
+    stepStartRunOver: 0,
     advancing: false,
   });
 
@@ -67,27 +67,24 @@ export function TutorialCoach() {
     const c = ctx.current;
     const s = useGame.getState();
     c.turned = 0;
-    c.drift = 0;
-    c.pickups = 0;
-    c.evaded = false;
-    c.nearMiss = false;
+    c.runOver = 0;
+    c.goodNearMiss = false;
     c.elapsed = 0;
     c.lastT = performance.now();
     c.lastHeading = playerRef.heading;
-    c.stepStartPickups = s.pickups;
-    c.stepStartEvade = s.tutEvadedAt;
+    c.stepStartRunOver = s.runOver;
     c.advancing = false;
     setFlash(false);
   }, [tutStep]);
 
-  // watch score notifications for near-miss events
+  // watch score notifications for good-ped near-miss events
   useEffect(
     () =>
       useGame.subscribe((s, prev) => {
         const n = s.notifications;
         if (n.length === prev.notifications.length) return;
         const last = n[n.length - 1];
-        if (last && NEAR_MISS_RE.test(last.text)) ctx.current.nearMiss = true;
+        if (last && GOOD_NEAR_RE.test(last.text)) ctx.current.goodNearMiss = true;
       }),
     []
   );
@@ -113,9 +110,7 @@ export function TutorialCoach() {
         while (dh < -Math.PI) dh += Math.PI * 2;
         c.turned += Math.abs(dh);
         c.lastHeading = playerRef.heading;
-        if (playerRef.drifting) c.drift += dt;
-        c.pickups = s.pickups - c.stepStartPickups;
-        c.evaded = s.tutEvadedAt > c.stepStartEvade;
+        c.runOver = s.runOver - c.stepStartRunOver;
 
         const def = STEPS[step];
         if (def.done(c) || c.elapsed >= def.timeout) {
@@ -152,8 +147,8 @@ export function TutorialCoach() {
         <div className="tut-kicker">TUTORIAL COMPLETO</div>
         <div className="tut-title">¡LISTO!</div>
         <div className="tut-text">
-          Sobrevive, suma puntos con derrapes y quiebros, y rompe la
-          persecución para respirar. Si te rodean, el EMP es tu amigo.
+          Atropella a los rojos, respeta a los azules y derrapa para subir el
+          combo. El EMP congela a todos los peatones: úsalo para apuntar mejor.
         </div>
         <button className="btn btn-primary tut-cta" onClick={end}>¡A JUGAR!</button>
       </div>

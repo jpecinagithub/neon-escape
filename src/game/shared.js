@@ -21,18 +21,12 @@ export const playerRef = {
   wrecked: false,
   body: null, // rapier RigidBody handle (set by PlayerCar)
   wheelSpin: { current: 0 }, // rad/s, read by CarModel
-  evade: { active: false, progress: 0 }, // breakaway meter, written by PlayerCar
 };
 
-/** Pursuit pacing shared between PlayerCar (evade trigger) and Enemies (spawn director). */
-export const pursuitState = {
-  breatherUntil: 0, // now() timestamp: no spawns / events while now() < this
-};
-
-/** Enemy registry. Enemies.jsx keeps this in sync. */
-export const enemiesRef = {
-  // entries: { id, type, position:Vector3, velocity:Vector3, speedKmh, hp, alive,
-  //            disabledUntil, body (rapier handle), lastHitAt }
+/** Pedestrian registry. Pedestrians.jsx keeps this in sync. */
+export const pedsRef = {
+  // entries: { id, type, alignment: 'good'|'bad', position:Vector3,
+  //            heading, speed, alive, frozenUntil }
   list: [],
 };
 

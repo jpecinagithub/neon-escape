@@ -75,7 +75,7 @@ export const useGame = create((set, get) => {
     health: 100,
     speedKmh: 0,
     survivalTime: 0,
-    enemiesDestroyed: 0,
+    runOver: 0,
     longestDrift: 0,
     topSpeed: 0,
     // power-up timestamps (performance.now()/1000 based); powerups flags derived in tick
@@ -89,7 +89,6 @@ export const useGame = create((set, get) => {
     tutStep: -1, // -1 = off, 0..N = active step
     tutorialSeen: saved.tutorialSeen === true,
     pickups: 0, // power-ups collected this run
-    tutEvadedAt: 0, // performance.now()/1000 of last PURSUIT EVADED
 
     // ---- local leaderboard (front-end only, localStorage) ----
     rankings: initialRankings(), // [{name, score, time, kills, carId, date}] desc, max RANK_MAX
@@ -144,19 +143,18 @@ export const useGame = create((set, get) => {
       runId: get().runId + 1,
       score: 0, combo: 1, comboCount: 0, comboTimer: 0,
       health: 100, speedKmh: 0, survivalTime: 0,
-      enemiesDestroyed: 0, longestDrift: 0, topSpeed: 0,
+      runOver: 0, longestDrift: 0, topSpeed: 0,
       fx: { nitroUntil: 0, shieldUntil: 0, scoreBoostUntil: 0 },
       powerups: { nitro: false, shield: false, scoreBoost: false },
       notifications: [], banner: null, stats: null,
       carId: carId || get().carId,
       // first run ever: the coach teaches the loop
       pickups: 0,
-      tutEvadedAt: 0,
       tutStep: get().tutorialSeen ? -1 : 0,
     }),
 
     // ---- tutorial coach ----
-    startTutorial: () => set({ tutStep: 0, pickups: 0, tutEvadedAt: 0 }),
+    startTutorial: () => set({ tutStep: 0, pickups: 0 }),
     advanceTut: () => set((s) => ({ tutStep: s.tutStep + 1 })),
     endTutorial: () => { set({ tutStep: -1, tutorialSeen: true }); save(); },
     replayTutorial: () => { set({ tutorialSeen: false }); get().startRun(); },
@@ -218,16 +216,8 @@ export const useGame = create((set, get) => {
       const s = get();
       if (duration > s.longestDrift) set({ longestDrift: duration });
     },
-    addKill: () => set((s) => ({ enemiesDestroyed: s.enemiesDestroyed + 1 })),
-
-    /** Player broke away from the pursuit: bonus + breather handled by callers. */
-    evadePursuit: (count) => {
-      const s = get();
-      if (s.phase !== 'playing') return;
-      s.addScore(1500 + 250 * count, 'PURSUIT EVADED');
-      s.setBanner('PURSUIT EVADED', `${count} hostile${count === 1 ? '' : 's'} lost your trail — breathe`, 3.5);
-      set({ tutEvadedAt: performance.now() / 1000 });
-    },
+    addKill: () => set((s) => ({ runOver: s.runOver + 1 })),
+    resetCombo: () => set({ combo: 1, comboCount: 0, comboTimer: 0 }),
 
     damage: (amount) => {
       const s = get();
@@ -258,7 +248,7 @@ export const useGame = create((set, get) => {
         fx.shieldUntil = t + 8;
         get().notify('SHIELD UP', '8s PROTECTION', 'good');
       } else if (kind === 'emp') {
-        get().notify('EMP BLAST', 'PURSUERS DISABLED', 'emp');
+        get().notify('EMP BLAST', 'PEATONES CONGELADOS', 'emp');
       } else if (kind === 'score') {
         fx.scoreBoostUntil = t + 10;
         get().notify('DOUBLE SCORE', '10s', 'score');
@@ -302,7 +292,7 @@ export const useGame = create((set, get) => {
         stats: {
           score,
           time: s.survivalTime,
-          kills: s.enemiesDestroyed,
+          kills: s.runOver,
           longestDrift: s.longestDrift,
           topSpeed: s.topSpeed,
           newUnlocks,

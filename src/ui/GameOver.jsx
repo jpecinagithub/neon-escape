@@ -76,7 +76,7 @@ export function GameOver() {
           <span className="k">BEST</span>
           <span className={`v${s.isBest ? ' newbest' : ''}`}>{best.toLocaleString()}{s.isBest ? ' ★' : ''}</span>
         </div>
-        <div className="go-stat"><span className="k">ENEMIES DESTROYED</span><span className="v">{s.kills}</span></div>
+        <div className="go-stat"><span className="k">ATROPELLOS</span><span className="v">{s.kills}</span></div>
         <div className="go-stat"><span className="k">LONGEST DRIFT</span><span className="v">{s.longestDrift.toFixed(1)}s</span></div>
         <div className="go-stat"><span className="k">TOP SPEED</span><span className="v">{Math.round(s.topSpeed)} km/h</span></div>
       </div>

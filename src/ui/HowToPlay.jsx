@@ -54,36 +54,40 @@ export function HowToPlay() {
         </p>
         <h3>LA IDEA DEL JUEGO</h3>
         <p>
-          Eres un piloto en Neon City y cuatro tipos de perseguidores te dan caza.
-          No hay meta: <b>sobrevive todo lo que puedas y haz la máxima puntuación</b>.
-          La partida termina cuando tu chapa (HULL) llega a 0.
+          Eres un piloto en Neon City y las calles están llenas de gente.
+          No hay meta: <b>haz la máxima puntuación antes de que tu chapa (HULL)
+          llegue a 0</b>. La ropa lo dice todo:
         </p>
         <p>
-          <b>Puntos:</b> sobrevivir, derrapar, pasar rozando a toda velocidad
-          (NEAR MISS, hasta 600 pts), destruir perseguidores y recoger potenciadores.
+          <b style={{ color: '#ff5566' }}>ROJO = malo:</b> ladrones, punkis y
+          algún patinador. <b>¡Atropéllalos!</b> Cada uno da puntos
+          (los patinadores rojos valen más) y no te hacen daño.
+        </p>
+        <p>
+          <b style={{ color: '#5fa8ff' }}>AZUL = bueno:</b> niños, abuelas,
+          embarazadas y algún patinador. <b>No los toques:</b> cada atropello
+          inocente te quita 12 de chapa y rompe tu combo.
+        </p>
+        <p>
+          <b>Puntos:</b> atropellar malos, derrapar, pasar rozando a un bueno
+          a toda velocidad (hasta 600 pts) y recoger potenciadores.
           Encadena acciones en menos de 4 segundos para subir el <b>combo hasta x5</b>.
         </p>
         <p>
-          <b>Escapar es posible:</b> si te alejas más de 95 m de <i>todos</i> los
-          perseguidores durante unos segundos, verás <b>BREAKING AWAY…</b> y al
-          completarse <b>PURSUIT EVADED</b>: bonus gordo y 12 segundos de respiro.
-          Huir tiene objetivo: ¡rompe la persecución!
-        </p>
-        <p>
-          <b>Los choques se pueden evitar:</b> de cerca, los enemigos fijan su
-          trayectoria al embestir — un quiebro brusco o un derrape a último momento
-          los esquiva de verdad. Y si te embisten, ellos también se hacen daño:
-          aguanta el intercambio y se romperán contra ti.
+          <b>Los patinadores</b> son rapidísimos y pueden ser buenos o malos:
+          fíjate en el color antes de decidir. Cuesta más atropellarlos… y más
+          esquivarlos.
         </p>
         <p>
           <b>Potenciadores</b> (iconos de colores en el minimapa): <b>N</b> nitro
-          (turbo de 5 s), <b>escudo</b> (8 s sin daño), <b>EMP</b> (fríe a los
-          cercanos), <b>reparación</b> (+25 de chapa) y <b>x2</b> (puntos dobles 10 s).
+          (turbo de 5 s), <b>escudo</b> (8 s con menos daño), <b>EMP</b> (congela
+          a los peatones cercanos unos segundos: apunta mejor o esquiva fácil),
+          <b>reparación</b> (+25 de chapa) y <b>x2</b> (puntos dobles 10 s).
         </p>
         <p>
-          <b>Enemigos destruidos</b> cuenta cuántos perseguidores has destrozado:
-          embistiéndolos a velocidad, con el EMP o dejando que se estrellen solos
-          contra ti. Cada uno da +1000 puntos.
+          <b>Atropellos</b> cuenta cuántos malos te has llevado por delante.
+          En el minimapa los verás como puntos <b style={{ color: '#ff5566' }}>rojos</b>;
+          los buenos son puntos <b style={{ color: '#5fa8ff' }}>azules</b>.
         </p>
         <div className="btn-row" style={{ justifyContent: 'center', marginTop: 18 }}>
           <button className="btn btn-primary" onClick={click(() => { audio.startMusic(); replayTutorial(); })}>JUGAR TUTORIAL</button>
