@@ -162,13 +162,19 @@ export function Enemies() {
     m.spawnTimer -= delta;
     if (m.spawnTimer <= 0) {
       m.spawnTimer = 2.2;
-      if (enemiesRef.list.length < desiredCount(t, m.heavyPursuitUntil)) spawnEnemy(t);
+      // tutorial: gentle pressure — max 2 hostiles while the coach is active
+      let want = desiredCount(t, m.heavyPursuitUntil);
+      if (gs.tutStep >= 0) want = Math.min(want, 2);
+      if (enemiesRef.list.length < want) spawnEnemy(t);
     }
 
-    m.eventTimer -= delta;
-    if (m.eventTimer <= 0) {
-      m.eventTimer = 50 + Math.random() * 30; // every 50-80s
-      runEvent(t);
+    // no special events while the tutorial coach is active
+    if (gs.tutStep < 0) {
+      m.eventTimer -= delta;
+      if (m.eventTimer <= 0) {
+        m.eventTimer = 50 + Math.random() * 30; // every 50-80s
+        runEvent(t);
+      }
     }
   });
 

@@ -53,6 +53,7 @@ export const useGame = create((set, get) => {
         carId: s.carId,
         rankings: s.rankings,
         playerName: s.playerName,
+        tutorialSeen: s.tutorialSeen,
       }));
     } catch (e) { /* ignore */ }
   };
@@ -83,6 +84,12 @@ export const useGame = create((set, get) => {
     notifications: [], // {id, text, sub, kind}
     banner: null, // {text, sub}
     stats: null,
+
+    // ---- tutorial (first-run coach) ----
+    tutStep: -1, // -1 = off, 0..N = active step
+    tutorialSeen: saved.tutorialSeen === true,
+    pickups: 0, // power-ups collected this run
+    tutEvadedAt: 0, // performance.now()/1000 of last PURSUIT EVADED
 
     // ---- local leaderboard (front-end only, localStorage) ----
     rankings: initialRankings(), // [{name, score, time, kills, carId, date}] desc, max RANK_MAX
@@ -142,7 +149,17 @@ export const useGame = create((set, get) => {
       powerups: { nitro: false, shield: false, scoreBoost: false },
       notifications: [], banner: null, stats: null,
       carId: carId || get().carId,
+      // first run ever: the coach teaches the loop
+      pickups: 0,
+      tutEvadedAt: 0,
+      tutStep: get().tutorialSeen ? -1 : 0,
     }),
+
+    // ---- tutorial coach ----
+    startTutorial: () => set({ tutStep: 0, pickups: 0, tutEvadedAt: 0 }),
+    advanceTut: () => set((s) => ({ tutStep: s.tutStep + 1 })),
+    endTutorial: () => { set({ tutStep: -1, tutorialSeen: true }); save(); },
+    replayTutorial: () => { set({ tutorialSeen: false }); get().startRun(); },
 
     pauseGame: () => { if (get().phase === 'playing') set({ phase: 'paused' }); },
     resumeGame: () => { if (get().phase === 'paused') set({ phase: 'playing' }); },
@@ -209,6 +226,7 @@ export const useGame = create((set, get) => {
       if (s.phase !== 'playing') return;
       s.addScore(1500 + 250 * count, 'PURSUIT EVADED');
       s.setBanner('PURSUIT EVADED', `${count} hostile${count === 1 ? '' : 's'} lost your trail — breathe`, 3.5);
+      set({ tutEvadedAt: performance.now() / 1000 });
     },
 
     damage: (amount) => {
@@ -245,7 +263,7 @@ export const useGame = create((set, get) => {
         fx.scoreBoostUntil = t + 10;
         get().notify('DOUBLE SCORE', '10s', 'score');
       }
-      set({ fx });
+      set({ fx, pickups: s.pickups + 1 });
     },
 
     notify: (text, sub, kind) => {

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useGame } from '../store/gameStore.js';
 import { playerRef, enemiesRef, powerupsRef } from '../game/shared.js';
+import { TutorialCoach } from './TutorialCoach.jsx';
 import { ROADS, WORLD_HALF } from '../game/cityData.js';
 import { POWERUP_DEFS } from '../game/constants.js';
 
@@ -219,6 +220,7 @@ export function HUD() {
       </div>
       {settings.showFps && <Fps />}
       <EvadeMeter />
+      <TutorialCoach />
 
       {/* bottom-left: hull + power-up icons */}
       <div className="hud-bl">
